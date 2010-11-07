@@ -1,0 +1,74 @@
+<?php
+
+function peroxide_init($theme) {
+  $file = dirname($theme->filename) . '/template.php';
+  if (file_exists($file)) {
+    include_once "./$file";
+  }
+
+  _peroxide_init();
+  _peroxide_scan_sass($theme);
+}
+
+function peroxide_extension() {
+}
+
+function peroxide_theme($existing, $type, $theme, $path) {
+  $templates = drupal_find_theme_functions($existing, array('haml', $theme));
+  $templates += drupal_find_theme_templates($existing, '.haml', $path);
+  return $templates;
+}
+
+function peroxide_render_template($file, $variables) {
+  // Extract variables
+  extract($variables, EXTR_SKIP);
+
+  ob_start();
+  $parser = new HamlParser();
+  include_once $parser->parse($file . ".haml", file_directory_temp(), 0755, '.haml', '.tpl.php');
+  $contents = ob_get_contents();
+  ob_end_clean();
+  return $contents;
+
+}
+
+/**
+ * Initialize the HamlParser
+ */
+function _peroxide_init() {
+  $path = drupal_get_path('theme_engine', 'peroxide');
+  include_once $path . '/haml/HamlParser.php';
+  include_once $path . '/sass/SassParser.php';
+}
+
+/**
+ * Scan for sass files, produce css files and then add them to the page
+ */
+function _peroxide_scan_sass($theme) {
+  $path = drupal_get_path('theme', $theme->name);
+  $exclude = array(
+    '.',
+    '..',
+    'CVS',
+    '.svn',
+    '.git',
+    '.hg',
+    '.bzr',
+  );
+
+  $options = array(
+    'cache_location' => file_directory_temp(),
+    'css_location' => $path . '/css',
+  );
+  $parser = new SassParser($options);
+
+  $files = file_scan_directory($path, '^.*[.sass|.scss]$');
+  foreach ($files as $sass_path => $file) {
+    $result = $parser->parse($sass_path)->render();
+    echo '<pre>';
+    var_dump($result);
+    echo '</pre>';
+    
+  }
+  
+}
