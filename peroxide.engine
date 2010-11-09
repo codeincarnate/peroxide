@@ -37,8 +37,8 @@ function peroxide_render_template($file, $variables) {
  */
 function _peroxide_init() {
   $path = drupal_get_path('theme_engine', 'peroxide');
-  include_once $path . '/haml/HamlParser.php';
-  include_once $path . '/sass/SassParser.php';
+  include_once $path . 'phamlp/haml/HamlParser.php';
+  include_once $path . 'phamlp/sass/SassParser.php';
 }
 
 /**
