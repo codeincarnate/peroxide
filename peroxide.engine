@@ -45,7 +45,21 @@ function _peroxide_init() {
  * Scan for sass files, produce css files and then add them to the page
  */
 function _peroxide_scan_sass($theme) {
+  // Setup initial file paths
   $path = drupal_get_path('theme', $theme->name);
+  $cached_css_path = file_directory_path() . '/peroxide/' . $theme->name;
+  
+  // Make sure that the directory we're placing css files in exists, if it doesn't exist attempt to create it
+  $dir_exists = file_check_directory($cached_css_path);
+  if (!$dir_exists) {
+    $result = mkdir($cached_css_path, 0755, TRUE);
+    if (!$result) {
+      drupal_set_message('You must have your Drupal files directory correctly configured to use peroxide.', 'error');
+      return;
+    }
+  }
+
+  // Don't search through common source control directories
   $exclude = array(
     '.',
     '..',
@@ -56,19 +70,19 @@ function _peroxide_scan_sass($theme) {
     '.bzr',
   );
 
+  // Setup the Sass Parser
   $options = array(
     'cache_location' => file_directory_temp(),
     'css_location' => $path . '/css',
   );
   $parser = new SassParser($options);
 
+  // Parse all .sass and .scss files, add the result to the page
   $files = file_scan_directory($path, '^.*[.sass|.scss]$');
   foreach ($files as $sass_path => $file) {
-    $result = $parser->parse($sass_path)->render();
-    echo '<pre>';
-    var_dump($result);
-    echo '</pre>';
-    
+    $css_file = $cached_css_path . '/' . $file->name . ".css";
+    $css = $parser->parse($sass_path)->render();
+    drupal_add_css($css_file, 'theme');
   }
   
 }
