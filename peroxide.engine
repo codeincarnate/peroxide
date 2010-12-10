@@ -1,24 +1,32 @@
 <?php
 
+/**
+ * Initialize peroxide
+ */
 function peroxide_init($theme) {
   $file = dirname($theme->filename) . '/template.php';
   if (file_exists($file)) {
     include_once "./$file";
   }
 
+  // TODO: Allow options for the parsers to be set in the theme's info file
   _peroxide_init();
   _peroxide_scan_sass($theme);
 }
 
-function peroxide_extension() {
-}
 
+/**
+ * We're handling HAML template files
+ */
 function peroxide_theme($existing, $type, $theme, $path) {
   $templates = drupal_find_theme_functions($existing, array('haml', $theme));
   $templates += drupal_find_theme_templates($existing, '.haml', $path);
   return $templates;
 }
 
+/**
+ * Render a HAML template
+ */
 function peroxide_render_template($file, $variables) {
   // Extract variables
   extract($variables, EXTR_SKIP);
@@ -59,30 +67,28 @@ function _peroxide_scan_sass($theme) {
     }
   }
 
-  // Don't search through common source control directories
-  $exclude = array(
-    '.',
-    '..',
-    'CVS',
-    '.svn',
-    '.git',
-    '.hg',
-    '.bzr',
-  );
-
   // Setup the Sass Parser
   $options = array(
     'cache_location' => file_directory_temp(),
     'css_location' => $path . '/css',
+    'extensions' => array(
+      'compass' => array(),
+    ),
   );
   $parser = new SassParser($options);
 
-  // Parse all .sass and .scss files, add the result to the page
-  $files = file_scan_directory($path, '^.*[.sass|.scss]$');
-  foreach ($files as $sass_path => $file) {
-    $css_file = $cached_css_path . '/' . $file->name . ".css";
-    $css = $parser->parse($sass_path)->render();
-    drupal_add_css($css_file, 'theme');
+  // Read information about sass files from the theme's info file
+  if (!empty($theme->info['sass'])) {
+    foreach ($theme->info['sass'] as $media => $sassy) {
+      foreach ($sassy as $sass) {
+        $sass_path = $path . '/' . $sass;
+        $info = pathinfo($sass_path);
+        $css_file = $cached_css_path . '/' . $info['filename'] . ".css";
+
+        $css = $parser->parse($sass_path)->render();
+        file_put_contents($css_file, $css);
+        drupal_add_css($css_file, 'theme', $media);
+      }
+    }
   }
-  
 }

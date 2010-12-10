@@ -6,7 +6,7 @@ project is to make more advanced tools available to developers so that the code 
 is shorter, easier to understand and more maintainable.
 
 Peroxide automatically compiles and caches templates as PHP. Sass and scss files are also
-automatically complied, cached and their resultant output css is automatically added to a page.
+automatically compiled, cached and their resultant output css is automatically added to a page.
 
 Peroxide uses the phamlp library to parse HAML and Sass.  This can be found at
 http://code.google.com/p/phamlp/
