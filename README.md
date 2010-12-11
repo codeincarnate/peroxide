@@ -22,7 +22,7 @@ of your Drupal installaiton:
 
 	cd sites/all/themes (or whatever your theme directory is)
 	mkdir engines
-	cd engiens
+	cd engines
 	git clone git://github.com/codeincarnate/peroxide.git
 
 Usage
