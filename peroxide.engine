@@ -9,11 +9,18 @@ function peroxide_init($theme) {
     include_once "./$file";
   }
 
+
   // TODO: Allow options for the parsers to be set in the theme's info file
   _peroxide_init();
   _peroxide_scan_sass($theme);
 }
 
+/**
+ * The extension for our templates
+ */
+function peroxide_extension() {
+  return ".haml";
+}
 
 /**
  * We're handling HAML template files
@@ -21,27 +28,30 @@ function peroxide_init($theme) {
 function peroxide_theme($existing, $type, $theme, $path) {
   $templates = drupal_find_theme_functions($existing, array('haml', $theme));
   $templates += drupal_find_theme_templates($existing, '.haml', $path);
+  var_dump($templates);
   return $templates;
 }
 
 /**
  * Render a HAML template
  */
-function peroxide_render_template($file, $variables) {
-  // Extract variables
+function peroxide_render_template($template, $variables) { 
+  // Extract Variables
   extract($variables, EXTR_SKIP);
 
+  // Render the template
   ob_start();
   $parser = new HamlParser();
-  include_once $parser->parse($file . ".haml", file_directory_temp(), 0755, '.haml', '.tpl.php');
+  include_once $parser->parse($template, file_directory_temp(), 0755, '.haml', '.tpl.php');
   $contents = ob_get_contents();
   ob_end_clean();
-  return $contents;
 
+  // Return contents
+  return $contents;
 }
 
 /**
- * Initialize the HamlParser
+ * Initialize the Haml and Sass Parsers
  */
 function _peroxide_init() {
   $path = drupal_get_path('theme_engine', 'peroxide');
