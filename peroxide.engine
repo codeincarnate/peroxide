@@ -28,7 +28,6 @@ function peroxide_extension() {
 function peroxide_theme($existing, $type, $theme, $path) {
   $templates = drupal_find_theme_functions($existing, array('haml', $theme));
   $templates += drupal_find_theme_templates($existing, '.haml', $path);
-  var_dump($templates);
   return $templates;
 }
 
@@ -95,7 +94,13 @@ function _peroxide_scan_sass($theme) {
         $info = pathinfo($sass_path);
         $css_file = $cached_css_path . '/' . $info['filename'] . ".css";
 
-        $css = $parser->parse($sass_path)->render();
+        try {
+          $css = $parser->parse($sass_path)->render();
+        }
+        catch (SassException $e) {
+          drupal_set_message($e->getMessage(), 'error');
+          drupal_set_message($e->getTraceAsString(), 'error');
+        }
         file_put_contents($css_file, $css);
         drupal_add_css($css_file, 'theme', $media);
       }
