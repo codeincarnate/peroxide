@@ -25,14 +25,21 @@ of your Drupal installaiton:
 	cd engines
 	git clone git://github.com/codeincarnate/peroxide.git
 
+_Note_: For peroxide to work probably your Drupal site's files directory must
+be writable by your webserver.
+
 Usage
 ------------
 
 To use peroxide as the engine for your theme add this line  to your
 themes info file.
 
-	engine = peroxide 	
+	engine = peroxide
 
+Basic Theme
+------------
+
+A basic theme using the peroxide theme engine can be found at https://github.com/codeincarnate/peroxide_theme
 
 License
 ------------
