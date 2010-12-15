@@ -34,14 +34,26 @@ function peroxide_theme($existing, $type, $theme, $path) {
 /**
  * Render a HAML template
  */
-function peroxide_render_template($template, $variables) { 
+function peroxide_render_template($template, $vars) {
+  // Attempt to make a logical cache structure, if that doesn't work then throw it out the window
+  // Assuming directory is always set this should handle multiple themes well
+  if (isset($vars['directory'])) {
+    $cached_haml_path = file_directory_path() . '/peroxide/haml_c/' . basename($vars['directory']);
+  }
+  else {
+    $cached_haml_path = file_directory_path() . '/peroxide/haml_c/';
+  }
+
+  // Make sure that the directory we're placing css files in exists, if it doesn't exist attempt to create it
+  _peroxide_check_directory($cached_haml_path);
+
   // Extract Variables
-  extract($variables, EXTR_SKIP);
+  extract($vars, EXTR_SKIP);
 
   // Render the template
   ob_start();
   $parser = new HamlParser();
-  include_once $parser->parse($template, file_directory_temp(), 0755, '.haml', '.tpl.php');
+  include_once $parser->parse($template, $cached_haml_path, 0755, '.haml', '.tpl.php');
   $contents = ob_get_contents();
   ob_end_clean();
 
@@ -64,17 +76,10 @@ function _peroxide_init() {
 function _peroxide_scan_sass($theme) {
   // Setup initial file paths
   $path = drupal_get_path('theme', $theme->name);
-  $cached_css_path = file_directory_path() . '/peroxide/' . $theme->name;
+  $cached_css_path = file_directory_path() . '/peroxide/css/' . $theme->name;
   
   // Make sure that the directory we're placing css files in exists, if it doesn't exist attempt to create it
-  $dir_exists = file_check_directory($cached_css_path);
-  if (!$dir_exists) {
-    $result = mkdir($cached_css_path, 0755, TRUE);
-    if (!$result) {
-      drupal_set_message('You must have your Drupal files directory correctly configured to use peroxide.', 'error');
-      return;
-    }
-  }
+  _peroxide_check_directory($cached_css_path);
 
   // Setup the Sass Parser
   $options = array(
@@ -106,4 +111,24 @@ function _peroxide_scan_sass($theme) {
       }
     }
   }
+}
+
+/**
+ * Check to see if a directory exists, if it doesn't
+ * attempt to recursively create the necessary directories.
+ */
+function _peroxide_check_directory($path) {
+  $dir_exists = file_check_directory($path);
+  if (!$dir_exists) {
+    $result = mkdir($path, 0755, TRUE);
+    if (!$result) {
+      drupal_set_message('You must have your Drupal files directory correctly configured to use peroxide.', 'error');
+      return;
+    }
+  }
+  else {
+    $result = TRUE;
+  }
+
+  return $result;
 }
