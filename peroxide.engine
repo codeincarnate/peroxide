@@ -132,3 +132,17 @@ function _peroxide_check_directory($path) {
 
   return $result;
 }
+
+/**
+ * 
+ */
+function _peroxide_set_haml_options($options) {
+  static $options;
+  if (empty($options)) {
+    return $options;
+  }
+}
+
+function _peroxide_get_haml_options() {
+  return _peroxide_set_haml_options();
+}
