@@ -12,7 +12,7 @@ Peroxide automatically compiles and caches templates as PHP. Sass and Scss files
 automatically compiled, cached and their resultant output css is automatically added to a page.
 
 Alongside of peroxide, a kickstarter theme is being developed to make getting started
-easier.  It can be found at https://github.com/codeincarnate/peroxide_theme
+easier.  It can be found at <https://github.com/codeincarnate/peroxide_theme>
 
 Installation
 ------------
