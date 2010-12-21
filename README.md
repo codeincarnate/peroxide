@@ -25,17 +25,8 @@ of your Drupal installaiton:
 	cd engines
 	git clone git://github.com/codeincarnate/peroxide.git
 
-_Note_: For peroxide to work probably your Drupal site's files directory must
+_Note_: For peroxide to work properly your Drupal site's files directory must
 be writable by your webserver.
-
-Future
-------------
-
-Drupal forms are ugly!  Fortunately there are great creative commons licensed
-graphics out there to use.  Ace (from Sproutcore) and Aristo (from Cappuccino)
-both look great.  If someone would like to plug either of these in that would be awesome.
-See this [article](http://www.antipode.ca/2009/themes-sproutcore-vs-cappuccino/) for more
-information.
 
 Usage
 ------------
@@ -49,6 +40,15 @@ Basic Theme
 ------------
 
 A basic theme using the peroxide theme engine can be found at <https://github.com/codeincarnate/peroxide_theme>
+
+Future
+------------
+
+Drupal forms are ugly!  Fortunately there are great creative commons licensed
+graphics out there to use.  Ace (from Sproutcore) and Aristo (from Cappuccino)
+both look great.  If someone would like to plug either of these in that would be awesome.
+See this [article](http://www.antipode.ca/2009/themes-sproutcore-vs-cappuccino/) for more
+information.
 
 License
 ------------
