@@ -1,4 +1,4 @@
-Peroxide
+ Peroxide
 =============
 
 Peroxide is a Drupal theme engine allowing templates to be created using Haml
@@ -25,8 +25,7 @@ of your Drupal installaiton:
 	cd engines
 	git clone git://github.com/codeincarnate/peroxide.git
 
-_Note_: For peroxide to work properly your Drupal site's files directory must
-be writable by your webserver.
+_Note_: For peroxide to work properly your Drupal site's files directory must be writable by your webserver.
 
 Usage
 ------------
