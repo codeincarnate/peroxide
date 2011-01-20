@@ -47,10 +47,10 @@ function peroxide_render_template($template, $vars) {
   // Attempt to make a logical cache structure, if that doesn't work then throw it out the window
   // Assuming directory is always set this should handle multiple themes well
   if (isset($vars['directory'])) {
-    $cached_haml_path = file_directory_path() . '/peroxide/haml_c/' . basename($vars['directory']);
+    $cached_haml_path = file_default_scheme() . '://peroxide/haml_c/' . basename($vars['directory']);
   }
   else {
-    $cached_haml_path = file_directory_path() . '/peroxide/haml_c/';
+    $cached_haml_path = file_default_scheme() . '://peroxide/haml_c/';
   }
 
   // Make sure that the directory we're placing css files in exists, if it doesn't exist attempt to create it
@@ -88,7 +88,7 @@ function _peroxide_init() {
 function _peroxide_scan_sass($theme) {
   // Setup initial file paths
   $path = drupal_get_path('theme', $theme->name);
-  $cached_css_path = file_directory_path() . '/peroxide/css/' . $theme->name;
+  $cached_css_path = file_default_scheme() . '://peroxide/css/' . $theme->name;
   
   // Make sure that the directory we're placing css files in exists, if it doesn't exist attempt to create it
   _peroxide_check_directory($cached_css_path);
@@ -124,7 +124,7 @@ function _peroxide_scan_sass($theme) {
  * attempt to recursively create the necessary directories.
  */
 function _peroxide_check_directory($path) {
-  $dir_exists = file_check_directory($path);
+  $dir_exists = file_prepare_directory($path);
   if (!$dir_exists) {
     $result = mkdir($path, 0755, TRUE);
     if (!$result) {
