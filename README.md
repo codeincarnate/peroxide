@@ -1,4 +1,4 @@
-Peroxide
+ Peroxide
 =============
 
 Peroxide is a Drupal theme engine allowing templates to be created using Haml
@@ -12,7 +12,7 @@ Peroxide automatically compiles and caches templates as PHP. Sass and Scss files
 automatically compiled, cached and their resultant output css is automatically added to a page.
 
 Alongside of peroxide, a kickstarter theme is being developed to make getting started
-easier.  It can be found at https://github.com/codeincarnate/peroxide_theme
+easier.  It can be found at <https://github.com/codeincarnate/peroxide_theme>
 
 Installation
 ------------
@@ -25,8 +25,7 @@ of your Drupal installaiton:
 	cd engines
 	git clone git://github.com/codeincarnate/peroxide.git
 
-_Note_: For peroxide to work probably your Drupal site's files directory must
-be writable by your webserver.
+_Note_: For peroxide to work properly your Drupal site's files directory must be writable by your webserver.
 
 Usage
 ------------
@@ -39,17 +38,28 @@ themes info file.
 Basic Theme
 ------------
 
-A basic theme using the peroxide theme engine can be found at https://github.com/codeincarnate/peroxide_theme
+A basic theme using the peroxide theme engine can be found at <https://github.com/codeincarnate/peroxide_theme>
+
+Future
+------------
+
+Drupal forms are ugly!  Fortunately there are great creative commons licensed
+graphics out there to use.  Ace (from Sproutcore) and Aristo (from Cappuccino)
+both look great.  If someone would like to plug either of these in that would be awesome.
+See this [article](http://www.antipode.ca/2009/themes-sproutcore-vs-cappuccino/) for more
+information.
 
 License
 ------------
 
 Peroxide is made available under the terms of the GPLv2.  For the full
-text of this license see http://www.gnu.org/licenses/gpl-2.0.html
+text of this license see <http://www.gnu.org/licenses/gpl-2.0.html>
 
 
 Credits
 ------------
 
 Peroxide uses the phamlp library to parse HAML and Sass.  This can be found at
-http://code.google.com/p/phamlp/
+<http://code.google.com/p/phamlp/>
+
+phamlp includes compass which can be found at <http://compass-style.org/>

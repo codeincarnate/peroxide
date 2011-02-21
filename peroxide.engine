@@ -9,6 +9,15 @@ function peroxide_init($theme) {
     include_once "./$file";
   }
 
+  // Set Haml parser options
+  if (!empty($theme->info['peroxide']['options']['haml'])) {
+    _peroxide_set_haml_options($theme, $theme->info['peroxide']['options']['haml']);
+  }
+
+  // Set Sass parser options
+  if (!empty($theme->info['peroxide']['options']['sass'])) {
+    _peroxide_set_sass_options($theme->info['peroxide']['options']['sass']);
+  }
 
   // TODO: Allow options for the parsers to be set in the theme's info file
   _peroxide_init();
@@ -47,12 +56,15 @@ function peroxide_render_template($template, $vars) {
   // Make sure that the directory we're placing css files in exists, if it doesn't exist attempt to create it
   _peroxide_check_directory($cached_haml_path);
 
+  // Retrieve options for the Haml parser
+  $options = _peroxide_get_haml_options();
+
   // Extract Variables
   extract($vars, EXTR_SKIP);
 
   // Render the template
   ob_start();
-  $parser = new HamlParser();
+  $parser = new HamlParser($options);
   include $parser->parse($template, $cached_haml_path, 0755, '.haml', '.tpl.php');
   $contents = ob_get_contents();
   ob_end_clean();
@@ -82,13 +94,7 @@ function _peroxide_scan_sass($theme) {
   _peroxide_check_directory($cached_css_path);
 
   // Setup the Sass Parser
-  $options = array(
-    'cache_location' => file_directory_temp(),
-    'css_location' => $path . '/css',
-    'extensions' => array(
-      'compass' => array(),
-    ),
-  );
+  $options = _peroxide_get_sass_options($theme);
   $parser = new SassParser($options);
 
   // Read information about sass files from the theme's info file
@@ -133,16 +139,89 @@ function _peroxide_check_directory($path) {
   return $result;
 }
 
+
 /**
- * 
+ * Set options for the Haml parser.
  */
-function _peroxide_set_haml_options($options) {
-  static $options;
+function _peroxide_set_haml_options($options = array()) {
+  static $set_options;
+
+  // If no options were passed in then return the options that have been set
   if (empty($options)) {
-    return $options;
+    if (empty($set_options)) {
+      return _peroxide_default_haml_options();
+    }
+
+    return $set_options;
   }
+
+  $set_options = array_merge(_peroxide_default_haml_options(), $options);
+  return $set_options;
 }
 
+/**
+ * Get options for the Haml parser
+ */
 function _peroxide_get_haml_options() {
   return _peroxide_set_haml_options();
+}
+
+/**
+ * Default options for the Haml parser.
+ */
+function _peroxide_default_haml_options() {
+  $options = array(
+    'style' => 'nested',
+  );
+
+  return $options;
+}
+
+
+/**
+ * Set options for the sass parser
+ */
+function _peroxide_set_sass_options($theme, $options = array()) {
+  static $set_options;
+
+  // If no options were passed in then return the options that have been set
+  if (empty($options)) {
+    if (empty($set_options)) {
+      return _peroxide_default_sass_options($theme);
+    }
+
+    return $set_options;
+  }
+
+  $set_options = array_merge(_peroxide_default_sass_options($theme), $options);
+  return $set_options;
+}
+
+/**
+ * Retrieve options for the Sass parser.
+ */
+function _peroxide_get_sass_options($theme) {
+  return _peroxide_set_sass_options($theme);
+}
+
+/**
+ * Default options for the Sass parser.
+ */
+function _peroxide_default_sass_options($theme) {
+  $options = array(
+    'cache_location' => file_directory_temp(),
+    'css_location' => $path . '/css',
+    'extensions' => array(
+      'compass' => array(),
+    ),
+  );
+  
+  // hook_peroxide_default_sass_options_alter(&$options, $theme)
+  drupal_alter('peroxide_default_sass_options', $options, $theme);
+  $function = $theme->name . '_peroxide_default_sass_options_alter';
+  if (function_exists($function)) {
+    $function($options, $theme);
+  }
+
+  return $options;
 }
