@@ -216,6 +216,7 @@ function _peroxide_default_sass_options($theme) {
     ),
   );
   
+  // hook_peroxide_default_sass_options_alter(&$options, $theme)
   drupal_alter('peroxide_default_sass_options', $options, $theme);
   $function = $theme->name . '_peroxide_default_sass_options_alter';
   if (function_exists($function)) {
