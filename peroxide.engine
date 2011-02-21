@@ -53,7 +53,7 @@ function peroxide_render_template($template, $vars) {
   // Render the template
   ob_start();
   $parser = new HamlParser();
-  include_once $parser->parse($template, $cached_haml_path, 0755, '.haml', '.tpl.php');
+  include $parser->parse($template, $cached_haml_path, 0755, '.haml', '.tpl.php');
   $contents = ob_get_contents();
   ob_end_clean();
 
