@@ -433,11 +433,6 @@ class HamlParser {
 	public function haml2PHP($sourceFile) {
 		$this->line = 0;
 		$this->filename = $sourceFile;
-		$helpers = "<?php\nrequire_once '".dirname(__FILE__).DIRECTORY_SEPARATOR."HamlHelpers.php';\n";
-		if (isset($this->helperFile)) {
-			$helpers .= "require_once '{$this->helperFile}';\n";
-		}
-		$helpers .= "?>";
 		return $helpers . $this->toTree(file_get_contents($sourceFile))->render();
 	}
 
