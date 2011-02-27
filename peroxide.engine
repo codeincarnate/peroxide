@@ -122,7 +122,9 @@ function _peroxide_scan_sass($theme) {
           drupal_set_message($e->getTraceAsString(), 'error');
         }
         file_put_contents($css_file, $css);
-        drupal_add_css($css_file, 'theme', $media);
+        if ($media != 'compile-only') {
+          drupal_add_css($css_file, 'theme', $media);
+        }
       }
     }
   }
