@@ -112,7 +112,7 @@ function _peroxide_scan_sass($theme) {
       foreach ($sassy as $sass) {
         $sass_path = $path . '/' . $sass;
         $info = pathinfo($sass_path);
-        $css_file = $cached_css_path . '/' . $info['filename'] . ".css";
+        $css_file = $cached_css_path . '/' . $info['filename'] . '.css';
 
         try {
           $css = $parser->parse($sass_path)->render();
@@ -121,7 +121,21 @@ function _peroxide_scan_sass($theme) {
           drupal_set_message($e->getMessage(), 'error');
           drupal_set_message($e->getTraceAsString(), 'error');
         }
-        file_put_contents($css_file, $css);
+        
+        if (/*$theme->info['settings']['rewrite paths in cached css'] == */1) {
+          $matches = array();
+          if (preg_match_all('/url\((?P<url>[.]+)\)/', $css, $matches)) {
+            foreach ($matches['url'] as $url) {
+              $url = explode('/', $url);
+              $filename = array_pop($url); // for now, just pop off the last element since there's never a time you'd reference a directory and not a file inside a css url()
+              $url = implode('/', $url);
+              $new_url = peroxide_calculate_new_path($path . $url, $cached_css_path) . "/$filename";
+              $css = str_replace("url($url)", "url($new_url)", $css);
+            }
+          }
+          file_put_contents($css_file, $css);
+        }
+          
         if ($media != 'compile-only') {
           drupal_add_css($css_file, 'theme', $media);
         }
@@ -291,4 +305,59 @@ function peroxide_alter($hook, &$options, $theme) {
   if (function_exists($function)) {
     $function($options, $theme);
   }
+}
+
+
+
+function peroxide_calculate_new_path($dest, $root = '', $dir_sep = '/') { 
+  $root = explode($dir_sep, $root); 
+  $dest = explode($dir_sep, $dest); 
+  $path = '.';
+  $fix = '';
+  $diff = 0;
+  
+  /* calculate the relative path back to the theme SASS */
+  for ($i = -1; ++$i < max(($rC = count($root)), ($dC = count($dest))); ) { 
+    if (isset($root[$i]) and isset($dest[$i])) { 
+      if ($diff) { 
+        $path .= $dir_sep. '..'; 
+        $fix .= $dir_sep. $dest[$i]; 
+        continue; 
+      } 
+      if ($root[$i] != $dest[$i]) { 
+        $diff = 1; 
+        $path .= $dir_sep. '..'; 
+        $fix .= $dir_sep. $dest[$i]; 
+        continue; 
+      }
+    }
+    else if (!isset($root[$i]) and isset($dest[$i])) { 
+      for($j = $i-1; ++$j < $dC;) { 
+        $fix .= $dir_sep. $dest[$j]; 
+      } 
+      break; 
+    } 
+    else if (isset($root[$i]) and !isset($dest[$i])) { 
+      for($j = $i-1; ++$j < $rC;) { 
+        $fix = $dir_sep. '..'. $fix; 
+      } 
+      break; 
+    } 
+  }
+  $path .= $fix;
+
+  /* clean the path */
+  $path = preg_replace('~/\./~', '/', $path); // resolve "."
+ 
+  // resolve ".."
+  $parts = array(); 
+  foreach (explode('/', preg_replace('~/+~', '/', $path)) as $part) { //preg_replace('~/+~', '/', $path)
+    if ($part == '..' && count($parts) > 0 && $parts[count($parts) - 1] != '..') { 
+      $x = array_pop($parts);  echo "popping '$x'\n";
+    }
+    else if ($part != '' && $part != '.') { 
+      $parts[] = $part; echo "adding '$part'\n";
+    }
+  }
+  return implode('/', $parts);
 }
