@@ -124,13 +124,16 @@ function _peroxide_scan_sass($theme) {
         
         if (/*$theme->info['settings']['rewrite paths in cached css'] == */1) {
           $matches = array();
-          if (preg_match_all('/url\((?P<url>[.]+)\)/', $css, $matches)) {
+          if (preg_match_all('/url\([\'"](?P<url>.+[\'"])\)/', $css, $matches)) {
             foreach ($matches['url'] as $url) {
+              $url = str_replace(array("'", '"'), '', $url);
               $url = explode('/', $url);
               $filename = array_pop($url); // for now, just pop off the last element since there's never a time you'd reference a directory and not a file inside a css url()
               $url = implode('/', $url);
-              $new_url = peroxide_calculate_new_path($path . $url, $cached_css_path) . "/$filename";
-              $css = str_replace("url($url)", "url($new_url)", $css);
+              $sass_dir = dirname($sass_path);
+              $new_url = peroxide_calculate_new_path($sass_dir . '/' . $url, $cached_css_path) . "/$filename";
+              $css = str_replace("url('$url/$filename')", "url('$new_url')", $css);
+              $css = str_replace("url(\"$url/$filename\")", "url(\"$new_url\")", $css);
             }
           }
           file_put_contents($css_file, $css);
@@ -353,10 +356,10 @@ function peroxide_calculate_new_path($dest, $root = '', $dir_sep = '/') {
   $parts = array(); 
   foreach (explode('/', preg_replace('~/+~', '/', $path)) as $part) { //preg_replace('~/+~', '/', $path)
     if ($part == '..' && count($parts) > 0 && $parts[count($parts) - 1] != '..') { 
-      $x = array_pop($parts);  echo "popping '$x'\n";
+      $x = array_pop($parts);
     }
     else if ($part != '' && $part != '.') { 
-      $parts[] = $part; echo "adding '$part'\n";
+      $parts[] = $part;
     }
   }
   return implode('/', $parts);
