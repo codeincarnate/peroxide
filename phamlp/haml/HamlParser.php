@@ -433,7 +433,7 @@ class HamlParser {
 	public function haml2PHP($sourceFile) {
 		$this->line = 0;
 		$this->filename = $sourceFile;
-		return $helpers . $this->toTree(file_get_contents($sourceFile))->render();
+		return $this->toTree(file_get_contents($sourceFile))->render();
 	}
 
 	/**
