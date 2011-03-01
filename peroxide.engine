@@ -162,7 +162,7 @@ function _peroxide_scan_sass($theme) {
 function _peroxide_scan_less($theme) {
   // Setup initial file paths
   $path = drupal_get_path('theme', $theme->name);
-  $cached_css_path = file_directory_path() . '/peroxide/css/' . $theme->name;
+  $cached_css_path = file_default_scheme() . '://peroxide/css/' . $theme->name;
 
   // Read information about sass files from the theme's info file
   if (!empty($theme->info['less'])) {
@@ -288,7 +288,7 @@ function _peroxide_get_sass_options($theme) {
 function _peroxide_default_sass_options() {
   $options = array(
     'cache_location' => file_directory_temp(),
-    'css_location' => $path . '/css',
+    'css_location' => '/css',
     'extensions' => array(
       'compass' => array(),
     ),
@@ -317,8 +317,8 @@ function peroxide_alter($hook, &$options, $theme) {
 
   // Allow theme to alter options
   $fun = $theme->name . '_' . $hook . '_alter';
-  if (function_exists($function)) {
-    $function($options, $theme);
+  if (function_exists($fun)) {
+    $fun($options, $theme);
   }
 }
 
