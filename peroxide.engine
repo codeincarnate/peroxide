@@ -24,7 +24,7 @@ function peroxide_init($theme) {
   else {
     _peroxide_set_sass_options($theme);
   }
-
+  
   // Initialize parsers and render Sass
   _peroxide_init();
   _peroxide_scan_sass($theme);
@@ -122,22 +122,34 @@ function _peroxide_scan_sass($theme) {
           drupal_set_message($e->getTraceAsString(), 'error');
         }
         
-        if (/*$theme->info['settings']['rewrite paths in cached css'] == */1) {
+        // rewrite asset paths if the theme's settings specify to do so 
+        if ($theme->info['peroxide']['options']['sass']['rewrite asset paths'] == 'true'
+          || (is_array($theme->info['peroxide']['options']['sass']['rewrite asset paths'])
+              && in_array($sass, $theme->info['peroxide']['options']['sass']['rewrite asset paths']))) {
+                
           $matches = array();
           if (preg_match_all('/url\([\'"](?P<url>.+[\'"])\)/', $css, $matches)) {
             foreach ($matches['url'] as $url) {
-              $url = str_replace(array("'", '"'), '', $url);
+              $url = str_replace(array("'", '"'), '', $url); // remove single and double quotes which sometimes remain
+              
+              // for now, just pop off the last element since there's never a time you'd reference a directory and not a file inside a css url()
               $url = explode('/', $url);
-              $filename = array_pop($url); // for now, just pop off the last element since there's never a time you'd reference a directory and not a file inside a css url()
+              $filename = array_pop($url);
               $url = implode('/', $url);
-              $sass_dir = dirname($sass_path);
-              $new_url = peroxide_calculate_new_path($sass_dir . '/' . $url, $cached_css_path) . "/$filename";
+              
+              // calculate the new relative path
+              $sass_dir = dirname($sass_path); // if sass[all][] = src/mysass.sass is specified, $sass_dir is "src"
+              $new_url = peroxide_calculate_path_difference($sass_dir . '/' . $url, $cached_css_path) . "/$filename";
+              
+              // do the actual replacement.  we either have to do str_replace twice or preg_replace once.
               $css = str_replace("url('$url/$filename')", "url('$new_url')", $css);
               $css = str_replace("url(\"$url/$filename\")", "url(\"$new_url\")", $css);
             }
           }
-          file_put_contents($css_file, $css);
         }
+        
+        // cache CSS in a file
+        file_put_contents($css_file, $css);
           
         if ($media != 'compile-only') {
           drupal_add_css($css_file, 'theme', $media);
@@ -310,16 +322,24 @@ function peroxide_alter($hook, &$options, $theme) {
   }
 }
 
-
-
-function peroxide_calculate_new_path($dest, $root = '', $dir_sep = '/') { 
+/**
+ * Finds the relative path from $root to $dest.
+ *
+ *  @param $dest
+ *    The destination.
+ *  @param $root
+ *    The starting point.
+ *  @param $dir_sep
+ *    The string used to separate directories.  Defaults to '/'.
+ */
+function peroxide_calculate_path_difference($dest, $root = '', $dir_sep = '/') { 
   $root = explode($dir_sep, $root); 
   $dest = explode($dir_sep, $dest); 
   $path = '.';
   $fix = '';
   $diff = 0;
   
-  /* calculate the relative path back to the theme SASS */
+  // calculate the relative path
   for ($i = -1; ++$i < max(($rC = count($root)), ($dC = count($dest))); ) { 
     if (isset($root[$i]) and isset($dest[$i])) { 
       if ($diff) { 
@@ -349,12 +369,12 @@ function peroxide_calculate_new_path($dest, $root = '', $dir_sep = '/') {
   }
   $path .= $fix;
 
-  /* clean the path */
+  // clean the path of all unnecessary relative path components (".", "..") 
   $path = preg_replace('~/\./~', '/', $path); // resolve "."
  
   // resolve ".."
   $parts = array(); 
-  foreach (explode('/', preg_replace('~/+~', '/', $path)) as $part) { //preg_replace('~/+~', '/', $path)
+  foreach (explode('/', preg_replace('~/+~', '/', $path)) as $part) {
     if ($part == '..' && count($parts) > 0 && $parts[count($parts) - 1] != '..') { 
       $x = array_pop($parts);
     }
