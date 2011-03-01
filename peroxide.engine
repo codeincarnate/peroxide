@@ -13,15 +13,22 @@ function peroxide_init($theme) {
   if (!empty($theme->info['peroxide']['options']['haml'])) {
     _peroxide_set_haml_options($theme, $theme->info['peroxide']['options']['haml']);
   }
+  else {
+    _peroxide_set_haml_options($theme);
+  }
 
   // Set Sass parser options
   if (!empty($theme->info['peroxide']['options']['sass'])) {
-    _peroxide_set_sass_options($theme->info['peroxide']['options']['sass']);
+    _peroxide_set_sass_options($theme, $theme->info['peroxide']['options']['sass']);
   }
-
-  // TODO: Allow options for the parsers to be set in the theme's info file
+  else {
+    _peroxide_set_sass_options($theme);
+  }
+  
+  // Initialize parsers and render Sass
   _peroxide_init();
   _peroxide_scan_sass($theme);
+  _peroxide_scan_less($theme);
 }
 
 /**
@@ -75,11 +82,13 @@ function peroxide_render_template($template, $vars) {
 
 /**
  * Initialize the Haml and Sass Parsers
+ * 
  */
 function _peroxide_init() {
   $path = drupal_get_path('theme_engine', 'peroxide');
   include_once $path . 'phamlp/haml/HamlParser.php';
   include_once $path . 'phamlp/sass/SassParser.php';
+  include_once $path . 'lessphp/lessc.inc.php';
 }
 
 /**
@@ -103,7 +112,7 @@ function _peroxide_scan_sass($theme) {
       foreach ($sassy as $sass) {
         $sass_path = $path . '/' . $sass;
         $info = pathinfo($sass_path);
-        $css_file = $cached_css_path . '/' . $info['filename'] . ".css";
+        $css_file = $cached_css_path . '/' . $info['filename'] . '.css';
 
         try {
           $css = $parser->parse($sass_path)->render();
@@ -112,7 +121,66 @@ function _peroxide_scan_sass($theme) {
           drupal_set_message($e->getMessage(), 'error');
           drupal_set_message($e->getTraceAsString(), 'error');
         }
+        
+        // rewrite asset paths if the theme's settings specify to do so 
+        if ($theme->info['peroxide']['options']['sass']['rewrite asset paths'] == 'true'
+          || (is_array($theme->info['peroxide']['options']['sass']['rewrite asset paths'])
+              && in_array($sass, $theme->info['peroxide']['options']['sass']['rewrite asset paths']))) {
+                
+          $matches = array();
+          if (preg_match_all('/url\([\'"](?P<url>.+[\'"])\)/', $css, $matches)) {
+            foreach ($matches['url'] as $url) {
+              $url = str_replace(array("'", '"'), '', $url); // remove single and double quotes which sometimes remain
+              
+              // for now, just pop off the last element since there's never a time you'd reference a directory and not a file inside a css url()
+              $url = explode('/', $url);
+              $filename = array_pop($url);
+              $url = implode('/', $url);
+              
+              // calculate the new relative path
+              $sass_dir = dirname($sass_path); // if sass[all][] = src/mysass.sass is specified, $sass_dir is "src"
+              $new_url = peroxide_calculate_path_difference($sass_dir . '/' . $url, $cached_css_path) . "/$filename";
+              
+              // do the actual replacement.  we either have to do str_replace twice or preg_replace once.
+              $css = str_replace("url('$url/$filename')", "url('$new_url')", $css);
+              $css = str_replace("url(\"$url/$filename\")", "url(\"$new_url\")", $css);
+            }
+          }
+        }
+        
+        // cache CSS in a file
         file_put_contents($css_file, $css);
+          
+        if ($media != 'compile-only') {
+          drupal_add_css($css_file, 'theme', $media);
+        }
+      }
+    }
+  }
+}
+
+function _peroxide_scan_less($theme) {
+  // Setup initial file paths
+  $path = drupal_get_path('theme', $theme->name);
+  $cached_css_path = file_directory_path() . '/peroxide/css/' . $theme->name;
+
+  // Read information about sass files from the theme's info file
+  if (!empty($theme->info['less'])) {
+    foreach ($theme->info['less'] as $media => $lessc) {
+      foreach ($lessc as $less) {
+        $less_path = $path . '/' . $less;
+        $info = pathinfo($less_path);
+        $css_file = $cached_css_path . '/' . $info['filename'] . ".css";
+
+        // Compile the less file
+        try {
+          lessc::ccompile($less_path, $css_file);
+        }
+        catch (Exception $e) {
+          drupal_set_message($e->getMessage(), 'error');
+        }
+        
+        // Add to the page
         drupal_add_css($css_file, 'theme', $media);
       }
     }
@@ -143,11 +211,11 @@ function _peroxide_check_directory($path) {
 /**
  * Set options for the Haml parser.
  */
-function _peroxide_set_haml_options($options = array()) {
+function _peroxide_set_haml_options($theme = array(), $options = array()) {
   static $set_options;
 
-  // If no options were passed in then return the options that have been set
-  if (empty($options)) {
+  // If no theme was passed in then return the options that have been set
+  if (empty($theme)) {
     if (empty($set_options)) {
       return _peroxide_default_haml_options();
     }
@@ -155,7 +223,12 @@ function _peroxide_set_haml_options($options = array()) {
     return $set_options;
   }
 
+  // Merge options from theme's info file with the defaults
   $set_options = array_merge(_peroxide_default_haml_options(), $options);
+
+  // Allow modules & running theme to alter Haml parser options
+  peroxide_alter('haml_options', $set_options, $theme);
+
   return $set_options;
 }
 
@@ -181,19 +254,24 @@ function _peroxide_default_haml_options() {
 /**
  * Set options for the sass parser
  */
-function _peroxide_set_sass_options($theme, $options = array()) {
+function _peroxide_set_sass_options($theme = array(), $options = array()) {
   static $set_options;
 
   // If no options were passed in then return the options that have been set
   if (empty($options)) {
     if (empty($set_options)) {
-      return _peroxide_default_sass_options($theme);
+      return _peroxide_default_sass_options();
     }
 
     return $set_options;
   }
 
+  // Merge options from theme's info file with the defaults
   $set_options = array_merge(_peroxide_default_sass_options($theme), $options);
+
+  // Allow modules & running theme to alter options
+  peroxide_alter('sass_options', $set_options, $theme);
+
   return $set_options;
 }
 
@@ -207,7 +285,7 @@ function _peroxide_get_sass_options($theme) {
 /**
  * Default options for the Sass parser.
  */
-function _peroxide_default_sass_options($theme) {
+function _peroxide_default_sass_options() {
   $options = array(
     'cache_location' => file_directory_temp(),
     'css_location' => $path . '/css',
@@ -215,13 +293,94 @@ function _peroxide_default_sass_options($theme) {
       'compass' => array(),
     ),
   );
-  
-  // hook_peroxide_default_sass_options_alter(&$options, $theme)
-  drupal_alter('peroxide_default_sass_options', $options, $theme);
-  $function = $theme->name . '_peroxide_default_sass_options_alter';
+
+  return $options;
+}
+
+/**
+ * A function to allow alteration of underlying parser options by
+ * the theme using peroxide at runtime.  Also allows modules
+ * to alter options as well.
+ *
+ *  @param $hook
+ *    The name of the alteration hook (e.g. haml_options)
+ *  @param $theme
+ *    Information for the theme.
+ *  @param $options
+ *    The options for the underlying parser.
+ */
+function peroxide_alter($hook, &$options, $theme) {
+  $hook = 'peroxide_' . $hook;
+
+  // Allow modules to alter options
+  drupal_alter($hook, $options, $theme);
+
+  // Allow theme to alter options
+  $fun = $theme->name . '_' . $hook . '_alter';
   if (function_exists($function)) {
     $function($options, $theme);
   }
+}
 
-  return $options;
+/**
+ * Finds the relative path from $root to $dest.
+ *
+ *  @param $dest
+ *    The destination.
+ *  @param $root
+ *    The starting point.
+ *  @param $dir_sep
+ *    The string used to separate directories.  Defaults to '/'.
+ */
+function peroxide_calculate_path_difference($dest, $root = '', $dir_sep = '/') { 
+  $root = explode($dir_sep, $root); 
+  $dest = explode($dir_sep, $dest); 
+  $path = '.';
+  $fix = '';
+  $diff = 0;
+  
+  // calculate the relative path
+  for ($i = -1; ++$i < max(($rC = count($root)), ($dC = count($dest))); ) { 
+    if (isset($root[$i]) and isset($dest[$i])) { 
+      if ($diff) { 
+        $path .= $dir_sep. '..'; 
+        $fix .= $dir_sep. $dest[$i]; 
+        continue; 
+      } 
+      if ($root[$i] != $dest[$i]) { 
+        $diff = 1; 
+        $path .= $dir_sep. '..'; 
+        $fix .= $dir_sep. $dest[$i]; 
+        continue; 
+      }
+    }
+    else if (!isset($root[$i]) and isset($dest[$i])) { 
+      for($j = $i-1; ++$j < $dC;) { 
+        $fix .= $dir_sep. $dest[$j]; 
+      } 
+      break; 
+    } 
+    else if (isset($root[$i]) and !isset($dest[$i])) { 
+      for($j = $i-1; ++$j < $rC;) { 
+        $fix = $dir_sep. '..'. $fix; 
+      } 
+      break; 
+    } 
+  }
+  $path .= $fix;
+
+  // clean the path of all unnecessary relative path components (".", "..") 
+  $path = preg_replace('~/\./~', '/', $path); // resolve "."
+ 
+  // resolve ".."
+  $parts = array(); 
+  foreach (explode('/', preg_replace('~/+~', '/', $path)) as $part) {
+    if ($part == '..' && count($parts) > 0 && $parts[count($parts) - 1] != '..') { 
+      $x = array_pop($parts);
+    }
+    else if ($part != '' && $part != '.') { 
+      $parts[] = $part;
+    }
+  }
+  return implode('/', $parts);
 }
