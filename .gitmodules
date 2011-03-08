@@ -1,6 +1,6 @@
-[submodule "docs"]
-	path = docs
-	url = ./docs
 [submodule "lessphp"]
 	path = lessphp
 	url = git@github.com:codeincarnate/lessphp.git
+[submodule "docs"]
+	path = docs
+	url = git@github.com:codeincarnate/peroxide.wiki.git
