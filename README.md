@@ -23,7 +23,7 @@ of your Drupal installaiton:
 	cd sites/all/themes (or whatever your theme directory is)
 	mkdir engines
 	cd engines
-	git clone git://github.com/codeincarnate/peroxide.git
+	git clone --recursive git://github.com/codeincarnate/peroxide.git
 
 _Note_: For peroxide to work properly your Drupal site's files directory must be writable by your webserver.
 
@@ -38,7 +38,7 @@ themes info file.
 Basic Theme
 ------------
 
-A basic theme using the peroxide theme engine can be found at <https://github.com/codeincarnate/peroxide_theme>
+A basic theme using the peroxide theme engine can be found at <https://github.com/codeincarnate/oxygen>
 
 Future
 ------------
