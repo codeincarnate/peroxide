@@ -266,14 +266,10 @@ function _peroxide_check_directory($path) {
  * Set options for the Haml parser.
  */
 function _peroxide_set_haml_options($theme = array(), $options = array()) {
-  static $set_options;
+  $set_options = &drupal_static(__FUNCTION__);
 
   // If no theme was passed in then return the options that have been set
-  if (empty($theme)) {
-    if (empty($set_options)) {
-      return _peroxide_default_haml_options();
-    }
-
+  if (!empty($set_options)) {
     return $set_options;
   }
 
@@ -309,14 +305,9 @@ function _peroxide_default_haml_options() {
  * Set options for the sass parser
  */
 function _peroxide_set_sass_options($theme = array(), $options = array()) {
-  static $set_options;
+  $set_options = drupal_static(__FUNCTION__);
 
-  // If no options were passed in then return the options that have been set
-  if (empty($options)) {
-    if (empty($set_options)) {
-      return _peroxide_default_sass_options();
-    }
-
+  if(!empty($set_options)) {
     return $set_options;
   }
 
