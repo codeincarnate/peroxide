@@ -130,6 +130,16 @@ function _peroxide_process_sass($theme, $sass) {
     return $css_file;
   }
 
+  // Try and build the file with the Ruby version
+  @exec(
+    'sass '.($info['extension'] == 'scss' ? '--scss ' : '').
+    escapeshellarg($sass).' '.escapeshellarg($css_file),
+    $op, $ret
+  );
+  if($ret == 0) {
+    return $css_file;
+  }
+
   try {
     $css = $parser->parse($sass)->render();
   }
@@ -150,7 +160,13 @@ function _peroxide_process_sass($theme, $sass) {
 function _peroxide_init() {
   $path = drupal_get_path('theme_engine', 'peroxide');
   include_once $path . 'phamlp/haml/HamlParser.php';
-  include_once $path . 'phamlp/sass/SassParser.php';
+
+  // Test for Ruby version first
+  @exec("sass -v", $op, $ret);
+  if($ret != 0) {
+    include_once $path . 'phamlp/sass/SassParser.php';
+  }
+
   include_once $path . 'lessphp/lessc.inc.php';
 }
 
