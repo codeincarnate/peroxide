@@ -117,10 +117,6 @@ function peroxide_css_alter(&$css) {
  * @returns The filename of the processed file
  */
 function _peroxide_process_sass($theme, $sass) {
-  // Setup the Sass Parser
-  $options = _peroxide_get_sass_options($theme);
-  $parser = new SassParser($options);
-
   $info = pathinfo($sass);
 
   // We put the new file in the same place because it's easier than reimplementing Drupal's url() rewriting
@@ -141,6 +137,10 @@ function _peroxide_process_sass($theme, $sass) {
   }
 
   try {
+    // Setup the Sass Parser
+    $options = _peroxide_get_sass_options($theme);
+    $parser = new SassParser($options);
+
     $css = $parser->parse($sass)->render();
   }
   catch (SassException $e) {
