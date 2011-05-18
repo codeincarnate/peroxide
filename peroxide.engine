@@ -27,7 +27,12 @@ function peroxide_init($theme) {
   
   // Initialize parsers and render Sass
   _peroxide_init();
-  _peroxide_scan_sass($theme);
+
+  // If the theme implements hook_css_alter(), assume it calls peroxide_css_alter()
+  if(!function_exists("{$theme->name}_css_alter")) {
+    _peroxide_scan_sass($theme);
+  }
+
   _peroxide_scan_less($theme);
 }
 
