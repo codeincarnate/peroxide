@@ -122,7 +122,7 @@ function _peroxide_process_sass($theme, $sass) {
   // We put the new file in the same place because it's easier than reimplementing Drupal's url() rewriting
   $css_file = "{$info['dirname']}/{$info['filename']}.sass-cache.css";
 
-  if(filemtime($css_file) > filemtime($file)) {
+  if(filemtime($css_file) < filemtime($file)) {
     return $css_file;
   }
 
