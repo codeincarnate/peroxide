@@ -68,7 +68,7 @@ function peroxide_render_template($template, $vars) {
 
   // Extract Variables
   extract($vars, EXTR_SKIP);
-
+  
   // Render the template
   ob_start();
   $parser = new HamlParser($options);
@@ -245,6 +245,7 @@ function _peroxide_get_haml_options() {
 function _peroxide_default_haml_options() {
   $options = array(
     'style' => 'nested',
+    'ugly' => false,
   );
 
   return $options;
