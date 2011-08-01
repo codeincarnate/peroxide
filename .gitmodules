@@ -1,3 +1,6 @@
-[submodule "docs"]
-	path = docs
-	url = ./docs
+[submodule "lessphp"]
+	path = lessphp
+	url = git@github.com:codeincarnate/lessphp.git
+[submodule "phamlp"]
+	path = phamlp
+	url = git@github.com:codeincarnate/phamlp.git
