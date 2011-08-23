@@ -27,7 +27,12 @@ function peroxide_init($theme) {
   
   // Initialize parsers and render Sass
   _peroxide_init();
-  _peroxide_scan_sass($theme);
+
+  // If the theme implements hook_css_alter(), assume it calls peroxide_css_alter()
+  if(!function_exists("{$theme->name}_css_alter")) {
+    _peroxide_scan_sass($theme);
+  }
+
   _peroxide_scan_less($theme);
 }
 
@@ -81,13 +86,87 @@ function peroxide_render_template($template, $vars) {
 }
 
 /**
+ * Implements hook_css_alter. Call it from your theme's hook_css_alter.
+ *
+ * Processes and .sass/.scss files in the stylesheets[] array.
+ */
+function peroxide_css_alter(&$css) {
+  $themes = list_themes();
+  $theme_info = $themes[$GLOBALS['theme']];
+
+  foreach($css as $fn => $info) {
+    $pathinfo = pathinfo($fn);
+    if($pathinfo['extension'] == 'scss' || $pathinfo['extension'] == 'sass') {
+      $new_fn = _peroxide_process_sass($theme_info, $fn);
+      unset($css[$fn]);
+      if($new_fn) {
+        $info['data'] = $new_fn;
+        $info['preprocess'] = FALSE;
+        $css[$new_fn] = $info;
+      }
+    }
+  }
+}
+
+/**
+ * Process a file from the stylesheets[] array. Called from peroxide_css_alter().
+ * The new file will be in the same directory, with the extension .sass-cache.css
+ *
+ * @param $theme Theme info object
+ * @param $sass Filename of the sass/scss file (from stylesheets[])
+ * @returns The filename of the processed file
+ */
+function _peroxide_process_sass($theme, $sass) {
+  $info = pathinfo($sass);
+
+  // We put the new file in the same place because it's easier than reimplementing Drupal's url() rewriting
+  $css_file = "{$info['dirname']}/{$info['filename']}.sass-cache.css";
+
+  if(filemtime($css_file) < filemtime($file)) {
+    return $css_file;
+  }
+
+  // Try and build the file with the Ruby version
+  @exec(
+    'sass '.($info['extension'] == 'scss' ? '--scss ' : '').
+    escapeshellarg($sass).' '.escapeshellarg($css_file),
+    $op, $ret
+  );
+  if($ret == 0) {
+    return $css_file;
+  }
+
+  try {
+    // Setup the Sass Parser
+    $options = _peroxide_get_sass_options($theme);
+    $parser = new SassParser($options);
+
+    $css = $parser->parse($sass)->render();
+  }
+  catch (SassException $e) {
+    drupal_set_message($e->getMessage(), 'error');
+    drupal_set_message($e->getTraceAsString(), 'error');
+  }
+
+  file_put_contents($css_file, $css);
+  return $css_file;
+}
+
+
+/**
  * Initialize the Haml and Sass Parsers
  * 
  */
 function _peroxide_init() {
   $path = drupal_get_path('theme_engine', 'peroxide');
   include_once $path . 'phamlp/haml/HamlParser.php';
-  include_once $path . 'phamlp/sass/SassParser.php';
+
+  // Test for Ruby version first
+  @exec("sass -v", $op, $ret);
+  if($ret != 0) {
+    include_once $path . 'phamlp/sass/SassParser.php';
+  }
+
   include_once $path . 'lessphp/lessc.inc.php';
 }
 
@@ -212,14 +291,10 @@ function _peroxide_check_directory($path) {
  * Set options for the Haml parser.
  */
 function _peroxide_set_haml_options($theme = array(), $options = array()) {
-  static $set_options;
+  $set_options = &drupal_static(__FUNCTION__);
 
   // If no theme was passed in then return the options that have been set
-  if (empty($theme)) {
-    if (empty($set_options)) {
-      return _peroxide_default_haml_options();
-    }
-
+  if (!empty($set_options)) {
     return $set_options;
   }
 
@@ -255,14 +330,9 @@ function _peroxide_default_haml_options() {
  * Set options for the sass parser
  */
 function _peroxide_set_sass_options($theme = array(), $options = array()) {
-  static $set_options;
+  $set_options = drupal_static(__FUNCTION__);
 
-  // If no options were passed in then return the options that have been set
-  if (empty($options)) {
-    if (empty($set_options)) {
-      return _peroxide_default_sass_options();
-    }
-
+  if(!empty($set_options)) {
     return $set_options;
   }
 
