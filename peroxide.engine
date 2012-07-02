@@ -238,34 +238,6 @@ function _peroxide_scan_sass($theme) {
   }
 }
 
-function _peroxide_scan_less($theme) {
-  // Setup initial file paths
-  $path = drupal_get_path('theme', $theme->name);
-  $cached_css_path = file_default_scheme() . '://peroxide/css/' . $theme->name;
-
-  // Read information about sass files from the theme's info file
-  if (!empty($theme->info['less'])) {
-    foreach ($theme->info['less'] as $media => $lessc) {
-      foreach ($lessc as $less) {
-        $less_path = $path . '/' . $less;
-        $info = pathinfo($less_path);
-        $css_file = $cached_css_path . '/' . $info['filename'] . ".css";
-
-        // Compile the less file
-        try {
-          lessc::ccompile($less_path, $css_file);
-        }
-        catch (Exception $e) {
-          drupal_set_message($e->getMessage(), 'error');
-        }
-        
-        // Add to the page
-        drupal_add_css($css_file, 'theme', $media);
-      }
-    }
-  }
-}
-
 /**
  * Check to see if a directory exists, if it doesn't
  * attempt to recursively create the necessary directories.
