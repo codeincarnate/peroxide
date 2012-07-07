@@ -1,9 +1,6 @@
 [submodule "docs"]
 	path = docs
 	url = git@github.com:codeincarnate/peroxide.wiki.git
-[submodule "phamlp"]
-	path = phamlp
-	url = git@github.com:codeincarnate/phamlp.git
 [submodule "mthaml"]
 	path = mthaml
 	url = https://github.com/arnaud-lb/MtHaml.git
